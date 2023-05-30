@@ -2,8 +2,6 @@ package org.spellchecker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -33,8 +31,7 @@ public class AsciidocSpellChecker {
         SarifIssueConverter sarifConverter = new SarifIssueConverter();
         var sarif = sarifConverter.convert(issues);
         ObjectMapper om = new ObjectMapper();
-        BufferedWriter writer = new BufferedWriter(new FileWriter(sarifFile));
-        writer.write(om.writeValueAsString(sarif));
+        om.writeValue(Paths.get(sarifFile).toFile(), sarif);
 
     }
 

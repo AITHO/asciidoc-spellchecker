@@ -46,6 +46,7 @@ public class SarifIssueConverter {
                                 .withTool(new Tool()
                                         .withDriver(new ToolComponent()
                                                 .withVersion("1.0")
+                                                .withInformationUri(new URI("https://github.com/AITHO/asciidoc-spellchecker"))
                                                 .withName("asciidoc-spell-checker")
                                         )
 
