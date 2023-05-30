@@ -6,7 +6,9 @@ ADD ./src src/
 RUN mvn clean package
 
 FROM eclipse-temurin:17-jre-focal
+RUN mkdir app
+RUN cd app
 WORKDIR /app
-COPY --from=builder target/asciidoctor-spellchecker-*.jar app.jar
+COPY --from=builder target/asciidoctor-spellchecker-1.0-*.jar asciidoctor-spellchecker.jar
 
-CMD ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-jar", "/app/asciidoctor-spellchecker.jar"]
