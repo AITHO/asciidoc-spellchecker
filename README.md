@@ -33,6 +33,13 @@ You can exclude rules from a paragraph/section using a custom attribute `ignore`
 The rules in ignore will not trigger
 ```
 
+To ignore all rules use the "ALL_RULES" value:
+
+```
+[ignore="ALL_RULES"]
+All rules will be ignored
+```
+
 ## Disclaimer
 This program was created in a hurry, has no testing, coverage and use a build and fix approach.
 
