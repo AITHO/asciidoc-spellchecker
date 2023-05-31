@@ -125,8 +125,8 @@ public class AsciidocIssueFinder {
         try (Stream<String> lines = Files.lines(Paths.get(sourceDir + "/" + sourceMap.getSourceFile()))) {
             lines.skip(sourceMap.getSourceLine()-1).findFirst().ifPresent(line -> {
                 for (var i = ruleMatch.getFromPos(); i < line.length(); i++) {
-                    if (StringUtils.equals(StringUtils.substring(line, i, ruleMatch.getToPos() + i - 3), foundText)) {
-                        match.setToPos(ruleMatch.getToPos() + i - 3);
+                    if (StringUtils.equals(StringUtils.substring(line, i, (ruleMatch.getToPos() - ruleMatch.getFromPos()) + i), foundText)) {
+                        match.setToPos((ruleMatch.getToPos() - ruleMatch.getFromPos()) + i);
                         match.setFromPos(i);
                         break;
 
