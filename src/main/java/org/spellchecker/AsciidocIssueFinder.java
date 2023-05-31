@@ -142,7 +142,7 @@ public class AsciidocIssueFinder {
             e.printStackTrace();
         }
         System.out.println("Potential error in file " + sourceMap.getSourceFile() + " on line " + sourceMap.getSourceLine() + " at characters " +
-                ruleMatch.getFromPos() + "-" + ruleMatch.getToPos() + " " + foundText + ": " +
+                match.getFromPos() + "-" + match.getToPos() + " " + foundText + ": " +
                 ruleMatch.getMessage());
         System.out.println("Rule ID: " +
                 ruleMatch.getRule().getId());
