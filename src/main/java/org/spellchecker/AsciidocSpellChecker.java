@@ -27,9 +27,9 @@ public class AsciidocSpellChecker {
         }
 
         AsciidocIssueFinder parser = new AsciidocIssueFinder(langCode, wordsToIgnore);
-        var issues = parser.parseAsciidoc(adocFile, directory);
+        var result = parser.parseAsciidoc(adocFile, directory);
         SarifIssueConverter sarifConverter = new SarifIssueConverter();
-        var sarif = sarifConverter.convert(issues);
+        var sarif = sarifConverter.convert(result);
         ObjectMapper om = new ObjectMapper();
         om.writeValue(Paths.get(sarifFile).toFile(), sarif);
 

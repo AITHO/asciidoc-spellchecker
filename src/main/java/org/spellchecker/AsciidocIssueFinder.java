@@ -6,6 +6,7 @@ import org.asciidoctor.SafeMode;
 import org.asciidoctor.ast.ListItem;
 import org.asciidoctor.ast.Section;
 import org.asciidoctor.ast.StructuralNode;
+import org.spellchecker.model.AnalysisResult;
 import org.spellchecker.model.SourceMap;
 import org.spellchecker.model.Issue;
 import org.jsoup.Jsoup;
@@ -41,7 +42,7 @@ public class AsciidocIssueFinder {
         asciidoctor = Asciidoctor.Factory.create();
     }
 
-    public List<Issue> parseAsciidoc(String file, String path) throws IOException {
+    public AnalysisResult parseAsciidoc(String file, String path) throws IOException {
         Options options = Options
                 .builder()
                 .safe(SafeMode.SAFE)
@@ -54,7 +55,7 @@ public class AsciidocIssueFinder {
         issues = new ArrayList<>();
         process(document);
         System.out.println("Analysis found " + issues.size() + " issues");
-        return issues;
+        return new AnalysisResult(issues, langTool.getAllActiveRules());
     }
 
     private void process(StructuralNode block) throws IOException {

@@ -1,19 +1,18 @@
 package org.spellchecker;
 
 import com.contrastsecurity.sarif.*;
+import org.spellchecker.model.AnalysisResult;
 import org.spellchecker.model.Issue;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class SarifIssueConverter {
 
-    public SarifSchema210 convert(List<Issue> issues) throws URISyntaxException {
+    public SarifSchema210 convert(AnalysisResult analysisResult) throws URISyntaxException {
         List<Result> results = new ArrayList<>();
-        for (var issue : issues) {
+        for (var issue : analysisResult.getIssues()) {
             Result result = new Result();
             result.setLevel(Result.Level.WARNING);
             result.setMessage(new Message().withText(generateMessage(issue)));
@@ -38,6 +37,14 @@ public class SarifIssueConverter {
             result.setRuleId(issue.getRuleMatch().getRule().getId());
             results.add(result);
         }
+        Set<ReportingDescriptor> rules = new HashSet<>();
+        for (var rule : analysisResult.getRules()) {
+            rules.add(new ReportingDescriptor()
+                    .withName(rule.getDescription())
+                    .withId(rule.getId())
+            );
+        }
+
         return new SarifSchema210()
                 .withVersion(SarifSchema210.Version._2_1_0)
                 .with$schema(new URI("http://json.schemastore.org/sarif-2.1.0-rtm.5"))
@@ -45,6 +52,7 @@ public class SarifIssueConverter {
                                 .withResults(results)
                                 .withTool(new Tool()
                                         .withDriver(new ToolComponent()
+                                                .withRules(rules)
                                                 .withVersion("1.0")
                                                 .withInformationUri(new URI("https://github.com/AITHO/asciidoc-spellchecker"))
                                                 .withName("asciidoc-spell-checker")
