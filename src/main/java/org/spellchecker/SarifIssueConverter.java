@@ -28,13 +28,13 @@ public class SarifIssueConverter {
                                                     )
                                                     .withRegion(new Region()
                                                             .withStartLine(issue.getSourceMap().getSourceLine())
-                                                            .withStartColumn(issue.getRuleMatch().getFromPos()+1)
-                                                            .withEndColumn(issue.getRuleMatch().getToPos()+1)
+                                                            .withStartColumn(issue.getMatch().getFromPos()+1)
+                                                            .withEndColumn(issue.getMatch().getToPos()+1)
                                                     )
                                     )
                     )
             );
-            result.setRuleId(issue.getRuleMatch().getRule().getId());
+            result.setRuleId(issue.getMatch().getRuleMatch().getRule().getId());
             results.add(result);
         }
         Set<ReportingDescriptor> rules = new HashSet<>();
@@ -69,19 +69,11 @@ public class SarifIssueConverter {
 
     private String generateMessage(Issue issue) {
         StringBuffer sb = new StringBuffer()
-                .append(issue.getRuleMatch().getMessage())
-                .append("\nFile ")
-                .append(issue.getSourceMap().getSourceFile())
-                .append(" on line ")
-                .append(issue.getSourceMap().getSourceLine())
-                .append(" at position ")
-                .append(issue.getRuleMatch().getFromPos())
-                .append("-")
-                .append(issue.getRuleMatch().getToPos())
-                .append(" ")
-                .append(issue.getSourceMap().getText(), issue.getRuleMatch().getFromPos(), issue.getRuleMatch().getToPos())
-                .append(".");
-        Optional.ofNullable(issue.getRuleMatch().getSuggestedReplacements()).orElse(new ArrayList<>()).stream().findFirst().ifPresent(suggestion -> sb.append(suggestion).append("?"));
+                .append(issue.getMatch().getRuleMatch().getMessage())
+                .append(": ")
+                .append(issue.getSourceMap().getText(), issue.getMatch().getRuleMatch().getFromPos(), issue.getMatch().getRuleMatch().getToPos())
+                .append(". ");
+        Optional.ofNullable(issue.getMatch().getRuleMatch().getSuggestedReplacements()).orElse(new ArrayList<>()).stream().findFirst().ifPresent(suggestion -> sb.append("Maybe you mean ").append(suggestion).append("?"));
         return sb.toString();
     }
 }

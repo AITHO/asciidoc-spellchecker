@@ -1,5 +1,6 @@
 package org.spellchecker;
 
+import org.apache.commons.lang3.StringUtils;
 import org.asciidoctor.Asciidoctor;
 import org.asciidoctor.Options;
 import org.asciidoctor.SafeMode;
@@ -7,6 +8,7 @@ import org.asciidoctor.ast.ListItem;
 import org.asciidoctor.ast.Section;
 import org.asciidoctor.ast.StructuralNode;
 import org.spellchecker.model.AnalysisResult;
+import org.spellchecker.model.Match;
 import org.spellchecker.model.SourceMap;
 import org.spellchecker.model.Issue;
 import org.jsoup.Jsoup;
@@ -20,8 +22,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class AsciidocIssueFinder {
 
@@ -30,6 +34,8 @@ public class AsciidocIssueFinder {
     private final Asciidoctor asciidoctor;
 
     private List<Issue> issues;
+
+    private String sourceDir;
 
     public AsciidocIssueFinder(String locale, List<String> wordsIgnored) {
         langTool = new JLanguageTool(Languages.getLanguageForShortCode(locale));
@@ -46,11 +52,11 @@ public class AsciidocIssueFinder {
         Options options = Options
                 .builder()
                 .safe(SafeMode.SAFE)
-
                 .sourceDir(new File(path))
                 .baseDir(new File(path))
                 .sourcemap(true)
                 .build();
+        this.sourceDir = path;
         var document = asciidoctor.load(Files.readString(Path.of(file)), options);
         issues = new ArrayList<>();
         process(document);
@@ -107,19 +113,39 @@ public class AsciidocIssueFinder {
         return toReturn;
     }
 
-    private void handleRules(SourceMap sourceMap, List<String> rulesToIgnore, RuleMatch match) {
-        if (rulesToIgnore.contains(match.getRule().getId())) {
+    private void handleRules(SourceMap sourceMap, List<String> rulesToIgnore, RuleMatch ruleMatch) {
+        if (rulesToIgnore.contains(ruleMatch.getRule().getId())) {
             return;
         }
+        String foundText = sourceMap.getText().substring(ruleMatch.getFromPos(), ruleMatch.getToPos());
+        Match match = new Match();
+        match.setRuleMatch(ruleMatch);
+        match.setToPos(ruleMatch.getToPos());
+        match.setFromPos(ruleMatch.getFromPos());
+        try (Stream<String> lines = Files.lines(Paths.get(sourceDir + "/" + sourceMap.getSourceFile()))) {
+            lines.skip(sourceMap.getSourceLine()-1).findFirst().ifPresent(line -> {
+                for (var i = ruleMatch.getFromPos(); i < line.length(); i++) {
+                    if (StringUtils.equals(StringUtils.substring(line, i, ruleMatch.getToPos() + i - 3), foundText)) {
+                        match.setToPos(ruleMatch.getToPos() + i - 3);
+                        match.setFromPos(i);
+                        break;
+
+                    }
+                }
+            });
+        } catch (IOException e) {
+            System.out.println("error during source position double check");
+            e.printStackTrace();
+        }
         System.out.println("Potential error in file " + sourceMap.getSourceFile() + " on line " + sourceMap.getSourceLine() + " at characters " +
-                match.getFromPos() + "-" + match.getToPos() + " " + sourceMap.getText().substring(match.getFromPos(), match.getToPos()) + ": " +
-                match.getMessage());
+                ruleMatch.getFromPos() + "-" + ruleMatch.getToPos() + " " + foundText + ": " +
+                ruleMatch.getMessage());
         System.out.println("Rule ID: " +
-                match.getRule().getId());
+                ruleMatch.getRule().getId());
         System.out.println("Rule DESC: " +
-                match.getRule().getDescription());
+                ruleMatch.getRule().getDescription());
         System.out.println("Suggested correction(s): " +
-                match.getSuggestedReplacements());
+                ruleMatch.getSuggestedReplacements());
         System.out.println("---");
         issues.add(new Issue(match, sourceMap));
     }
