@@ -118,7 +118,7 @@ public class AsciidocIssueFinder {
     }
 
     private void handleRules(SourceMap sourceMap, List<String> rulesToIgnore, RuleMatch ruleMatch) {
-        if (rulesToIgnore.contains(ruleMatch.getRule().getId())) {
+        if (rulesToIgnore.contains(ruleMatch.getRule().getId()) || rulesToIgnore.contains("ALL_RULES")) {
             return;
         }
         String foundText = sourceMap.getText().substring(ruleMatch.getFromPos(), ruleMatch.getToPos());
