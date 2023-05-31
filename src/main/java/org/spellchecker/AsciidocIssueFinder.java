@@ -37,6 +37,8 @@ public class AsciidocIssueFinder {
 
     private String sourceDir;
 
+    private String sourceFile;
+
     public AsciidocIssueFinder(String locale, List<String> wordsIgnored) {
         langTool = new JLanguageTool(Languages.getLanguageForShortCode(locale));
         for (Rule rule : langTool.getAllActiveRules()) {
@@ -57,6 +59,7 @@ public class AsciidocIssueFinder {
                 .sourcemap(true)
                 .build();
         this.sourceDir = path;
+        this.sourceFile = file;
         var document = asciidoctor.load(Files.readString(Path.of(file)), options);
         issues = new ArrayList<>();
         process(document);
@@ -126,6 +129,9 @@ public class AsciidocIssueFinder {
         match.setRuleMatch(ruleMatch);
         match.setToPos(ruleMatch.getToPos());
         match.setFromPos(ruleMatch.getFromPos());
+        if (sourceMap.getSourceFile().equals("<stdin>")) {
+            sourceMap.setSourceFile(StringUtils.removeStart(StringUtils.removeStart(StringUtils.removeStart(sourceFile, sourceDir), "\\"), "\\"));
+        }
         try (Stream<String> lines = Files.lines(Paths.get(sourceDir + "/" + sourceMap.getSourceFile()))) {
             lines.skip(sourceMap.getSourceLine()-1).findFirst().ifPresent(line -> {
                 for (var i = ruleMatch.getFromPos(); i < line.length(); i++) {
