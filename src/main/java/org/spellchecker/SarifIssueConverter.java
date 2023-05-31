@@ -42,6 +42,9 @@ public class SarifIssueConverter {
             rules.add(new ReportingDescriptor()
                     .withName(rule.getDescription())
                     .withId(rule.getId())
+                    .withDefaultConfiguration(new ReportingConfiguration()
+                            .withLevel(ReportingConfiguration.Level.NOTE)
+                    )
             );
         }
 
