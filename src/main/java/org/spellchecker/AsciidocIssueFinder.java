@@ -89,13 +89,17 @@ public class AsciidocIssueFinder {
 
             if (sourceMap != null && sourceMap.getText() != null && !sourceMap.getText().isEmpty()) {
                 List<String> rulesToIgnore = extractRuleToIgnore(currentBlock);
-                processSourceMap(sourceMap);
-
-                List<RuleMatch> matches = langTool.check(sourceMap.getText());
-
-                for (RuleMatch match : matches) {
-                    handleRules(sourceMap, rulesToIgnore, match);
+                int currentLine = sourceMap.getSourceLine();
+                var sublines = sourceMap.getText().split("\n");
+                for (var subline : sublines){
+                    SourceMap subSourceMap = new SourceMap(subline, currentLine++, sourceMap.getSourceFile());
+                    processSourceMap(subSourceMap);
+                    List<RuleMatch> matches = langTool.check(subSourceMap.getText());
+                    for (RuleMatch match : matches) {
+                        handleRules(subSourceMap, rulesToIgnore, match);
+                    }
                 }
+
             }
 
             if ((currentBlock.getBlocks() != null && !currentBlock.getBlocks().isEmpty())) {
