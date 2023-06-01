@@ -147,7 +147,7 @@ public class AsciidocIssueFinder {
             System.out.println("error during source position double check");
             e.printStackTrace();
         }
-        System.out.println("Potential error in file " + sourceMap.getSourceFile() + " on line " + sourceMap.getSourceLine() + " at characters " +
+        System.out.println("Potential error in file " + sourceMap.getSourceFile() + " on line " + sourceMap.getSourceLine() + " column " +
                 match.getFromPos() + "-" + match.getToPos() + " " + foundText + ": " +
                 ruleMatch.getMessage());
         System.out.println("Rule ID: " +
