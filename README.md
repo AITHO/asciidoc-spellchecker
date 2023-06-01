@@ -2,8 +2,10 @@
 A simple Java application using jAsciidoctor and Language Tool to produce a SARIF json file.
 
 ## Usage
+
 ### Using docker
-`docker run XXXX`
+`docker run -it -v ".:/documents/" -e ASCIIDOC_LANG=it-IT -e ASCIIDOC_PATH=/documents -e ASCIIDOC_FILE=/documents/my_document.adoc -e ASCIIDOC_WORDS_IGNORED=/documents/wordsIgnored.txt -e ASCIIDOC_SARIF_FILE=/documents/my_document.sarif.json aithogg/asciidoc-spellchecker`
+
 ### Env variable
 Set the following env variable
 * `ASCIIDOC_LANG` the language code of the document
