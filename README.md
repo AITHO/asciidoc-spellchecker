@@ -26,6 +26,7 @@ ASCIIDOC_SARIF_FILE=/documents/book.sarif.json
 You can add word to the dictionary creating a file with one word per line and use it as value in the `ASCIIDOC_WORDS_IGNORED`
 
 ### Ignored rules
+#### Block
 You can exclude rules from a paragraph/section using a custom attribute `ignore`:
 
 ```
@@ -39,6 +40,15 @@ To ignore all rules use the "ALL_RULES" value:
 [ignore="ALL_RULES"]
 All rules will be ignored
 ```
+
+#### Inline
+You can ignore rules in formatted elements using this syntax
+
+```
+[ignore UPPERCASE_SENTENCE_START RULE_2]*mvn compile;*
+```
+
+Use `ALL_RULES` to ignore all rules.
 
 ## Disclaimer
 This program was created in a hurry, has no testing, coverage and use a build and fix approach.

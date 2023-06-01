@@ -1,16 +1,13 @@
 package org.spellchecker;
 
-import org.apache.commons.lang3.StringUtils;
 import org.asciidoctor.Asciidoctor;
 import org.asciidoctor.Options;
 import org.asciidoctor.SafeMode;
 import org.asciidoctor.ast.ListItem;
 import org.asciidoctor.ast.Section;
 import org.asciidoctor.ast.StructuralNode;
-import org.spellchecker.model.AnalysisResult;
-import org.spellchecker.model.Match;
-import org.spellchecker.model.SourceMap;
-import org.spellchecker.model.Issue;
+import org.jsoup.nodes.Document;
+import org.spellchecker.model.*;
 import org.jsoup.Jsoup;
 import org.languagetool.JLanguageTool;
 import org.languagetool.Languages;
@@ -22,10 +19,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class AsciidocIssueFinder {
 
@@ -33,11 +28,9 @@ public class AsciidocIssueFinder {
 
     private final Asciidoctor asciidoctor;
 
+    private MatchManager matchManager;
+
     private List<Issue> issues;
-
-    private String sourceDir;
-
-    private String sourceFile;
 
     public AsciidocIssueFinder(String locale, List<String> wordsIgnored) {
         langTool = new JLanguageTool(Languages.getLanguageForShortCode(locale));
@@ -58,8 +51,7 @@ public class AsciidocIssueFinder {
                 .baseDir(new File(path))
                 .sourcemap(true)
                 .build();
-        this.sourceDir = path;
-        this.sourceFile = file;
+        this.matchManager = new MatchManager(file, path);
         var document = asciidoctor.load(Files.readString(Path.of(file)), options);
         issues = new ArrayList<>();
         process(document);
@@ -93,13 +85,14 @@ public class AsciidocIssueFinder {
             if (sourceMap != null && sourceMap.getText() != null && !sourceMap.getText().isEmpty()) {
                 List<String> rulesToIgnore = extractRuleToIgnore(currentBlock);
                 int currentLine = sourceMap.getSourceLine();
-                var sublines = sourceMap.getText().split("\n");
-                for (var subline : sublines){
-                    SourceMap subSourceMap = new SourceMap(subline, currentLine++, sourceMap.getSourceFile());
-                    processSourceMap(subSourceMap);
+                var subLines = sourceMap.getText().split("\n");
+                for (var subLine : subLines){
+                    SourceMap subSourceMap = new SourceMap(subLine, currentLine++, sourceMap.getSourceFile());
+                    List<InlineIgnoredRule> inlineIgnoredRules = processSourceMap(subSourceMap);
                     List<RuleMatch> matches = langTool.check(subSourceMap.getText());
                     for (RuleMatch match : matches) {
-                        handleRules(subSourceMap, rulesToIgnore, match);
+                        matchManager.handleMatch(subSourceMap, rulesToIgnore, match, inlineIgnoredRules)
+                                .ifPresent(issues::add);
                     }
                 }
 
@@ -120,47 +113,19 @@ public class AsciidocIssueFinder {
         return toReturn;
     }
 
-    private void handleRules(SourceMap sourceMap, List<String> rulesToIgnore, RuleMatch ruleMatch) {
-        if (rulesToIgnore.contains(ruleMatch.getRule().getId()) || rulesToIgnore.contains("ALL_RULES")) {
-            return;
-        }
-        String foundText = sourceMap.getText().substring(ruleMatch.getFromPos(), ruleMatch.getToPos());
-        Match match = new Match();
-        match.setRuleMatch(ruleMatch);
-        match.setToPos(ruleMatch.getToPos());
-        match.setFromPos(ruleMatch.getFromPos());
-        if (sourceMap.getSourceFile().equals("<stdin>")) {
-            sourceMap.setSourceFile(StringUtils.removeStart(StringUtils.removeStart(StringUtils.removeStart(sourceFile, sourceDir), "\\"), "\\"));
-        }
-        try (Stream<String> lines = Files.lines(Paths.get(sourceDir + "/" + sourceMap.getSourceFile()))) {
-            lines.skip(sourceMap.getSourceLine()-1).findFirst().ifPresent(line -> {
-                for (var i = ruleMatch.getFromPos(); i < line.length(); i++) {
-                    if (StringUtils.equals(StringUtils.substring(line, i, (ruleMatch.getToPos() - ruleMatch.getFromPos()) + i), foundText)) {
-                        match.setToPos((ruleMatch.getToPos() - ruleMatch.getFromPos()) + i);
-                        match.setFromPos(i);
-                        break;
 
-                    }
-                }
-            });
-        } catch (IOException e) {
-            System.out.println("error during source position double check");
-            e.printStackTrace();
-        }
-        System.out.println("Potential error in file " + sourceMap.getSourceFile() + " on line " + sourceMap.getSourceLine() + " column " +
-                match.getFromPos() + "-" + match.getToPos() + " " + foundText + ": " +
-                ruleMatch.getMessage());
-        System.out.println("Rule ID: " +
-                ruleMatch.getRule().getId());
-        System.out.println("Rule DESC: " +
-                ruleMatch.getRule().getDescription());
-        System.out.println("Suggested correction(s): " +
-                ruleMatch.getSuggestedReplacements());
-        System.out.println("---");
-        issues.add(new Issue(match, sourceMap));
-    }
 
-    private void processSourceMap(SourceMap sourceMap) {
-        sourceMap.setText(Jsoup.parse(sourceMap.getText()).text());
+
+    private List<InlineIgnoredRule> processSourceMap(SourceMap sourceMap) {
+        List<InlineIgnoredRule> inlineIgnoredRules = new ArrayList<>();
+        Document parsed = Jsoup.parse(sourceMap.getText());
+        for (var element : parsed.select(".ignore")) {
+            InlineIgnoredRule inlineIgnoredRule = new InlineIgnoredRule();
+            inlineIgnoredRule.setRules(element.classNames());
+            inlineIgnoredRule.setText(element.text());
+            inlineIgnoredRules.add(inlineIgnoredRule);
+        }
+        sourceMap.setText(parsed.text());
+        return inlineIgnoredRules;
     }
 }
