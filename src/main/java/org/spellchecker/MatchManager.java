@@ -73,7 +73,7 @@ public class MatchManager {
                 .toList();
         for (var possibleInlineRule : possibleInlineIgnoreRules) {
             var length = possibleInlineRule.getText().length();
-            if (sourceMap.getText().substring(ruleMatch.getFromPos(), ruleMatch.getFromPos() + length).equals(possibleInlineRule.getText())) {
+            if (StringUtils.substring(sourceMap.getText(), ruleMatch.getFromPos(), ruleMatch.getFromPos() + length).equals(possibleInlineRule.getText())) {
                 if (possibleInlineRule.getRules().contains(ruleMatch.getRule().getId()) || possibleInlineRule.getRules().contains("ALL_RULES")) {
                     return true;
                 }
