@@ -22,7 +22,6 @@ public class MatchManager {
 
     public Optional<Issue> handleMatch(SourceMap sourceMap, List<String> rulesToIgnore, RuleMatch ruleMatch, List<InlineIgnoredRule> inlineIgnoredRules) {
         String foundText = sourceMap.getText().substring(ruleMatch.getFromPos(), ruleMatch.getToPos());
-
         if (ignoreRuleMatch(sourceMap, rulesToIgnore, ruleMatch, inlineIgnoredRules, foundText)){
             return Optional.empty();
         }
@@ -73,8 +72,8 @@ public class MatchManager {
                 .toList();
         for (var possibleInlineRule : possibleInlineIgnoreRules) {
             var starting = ruleMatch.getFromPos() - StringUtils.indexOf(possibleInlineRule.getText(), foundText);
-            var ending = possibleInlineRule.getText().length();
-            if (StringUtils.substring(sourceMap.getText(), starting, ending).equals(StringUtils.substring(possibleInlineRule.getText(), starting))) {
+            var ending = possibleInlineRule.getText().length() + starting;
+            if (StringUtils.substring(sourceMap.getText(), starting, ending).equals(possibleInlineRule.getText())) {
                 if (possibleInlineRule.getRules().contains(ruleMatch.getRule().getId()) || possibleInlineRule.getRules().contains("ALL_RULES")) {
                     return true;
                 }
