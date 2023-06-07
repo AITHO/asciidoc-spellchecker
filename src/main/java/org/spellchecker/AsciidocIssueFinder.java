@@ -7,6 +7,8 @@ import org.asciidoctor.ast.ListItem;
 import org.asciidoctor.ast.Section;
 import org.asciidoctor.ast.StructuralNode;
 import org.jsoup.nodes.Document;
+import org.languagetool.rules.patterns.PatternRule;
+import org.languagetool.rules.patterns.PatternToken;
 import org.spellchecker.model.*;
 import org.jsoup.Jsoup;
 import org.languagetool.JLanguageTool;
@@ -35,8 +37,17 @@ public class AsciidocIssueFinder {
     public AsciidocIssueFinder(String locale, List<String> wordsIgnored) {
         langTool = new JLanguageTool(Languages.getLanguageForShortCode(locale));
         for (Rule rule : langTool.getAllActiveRules()) {
-            if (rule.getId().equals("MORFOLOGIK_RULE_"+locale.toUpperCase().replace("-", "_"))) {
-                ((MorfologikSpellerRule) rule).addIgnoreTokens(wordsIgnored);
+            if (rule instanceof MorfologikSpellerRule morfologikSpellerRule) {
+                morfologikSpellerRule.addIgnoreTokens(wordsIgnored);
+            }
+            else if (rule instanceof PatternRule patternRule) {
+                if (patternRule.getPatternTokens()
+                        .stream()
+                        .map(PatternToken::getString)
+                        .anyMatch(wordsIgnored::contains)) {
+                    langTool.disableRule(rule.getId());
+                }
+
             }
         }
 

@@ -68,10 +68,11 @@ public class MatchManager {
 
         var possibleInlineIgnoreRules = inlineIgnoredRules
                 .stream()
-                .filter(el -> el.getText().contains(foundText))
+                .filter(el -> el.getText().contains(foundText) || foundText.contains(el.getText()))
                 .toList();
         for (var possibleInlineRule : possibleInlineIgnoreRules) {
-            var starting = ruleMatch.getFromPos() - StringUtils.indexOf(possibleInlineRule.getText(), foundText);
+            var startOffset = StringUtils.indexOf(possibleInlineRule.getText(), foundText) >= 0 ? StringUtils.indexOf(possibleInlineRule.getText(), foundText) : StringUtils.indexOf(foundText, possibleInlineRule.getText());
+            var starting = ruleMatch.getFromPos() - startOffset;
             var ending = possibleInlineRule.getText().length() + starting;
             if (StringUtils.substring(sourceMap.getText(), starting, ending).equals(possibleInlineRule.getText())) {
                 if (possibleInlineRule.getRules().contains(ruleMatch.getRule().getId()) || possibleInlineRule.getRules().contains("ALL_RULES")) {
