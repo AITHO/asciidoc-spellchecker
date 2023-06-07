@@ -48,8 +48,8 @@ public class MatchManager {
             System.out.println("error during source position double check");
             e.printStackTrace();
         }
-        System.out.println("Potential error in file " + sourceMap.getSourceFile() + " on line " + sourceMap.getSourceLine() + " column " +
-                match.getFromPos() + "-" + match.getToPos() + " " + foundText + ": " +
+        System.out.println("Potential error in file " + sourceMap.getSourceFile() + " on line " + (sourceMap.getSourceLine()+1) + " column " +
+                (match.getFromPos()+1) + "-" + match.getToPos() + " " + foundText + ": " +
                 ruleMatch.getMessage());
         System.out.println("Rule ID: " +
                 ruleMatch.getRule().getId());
@@ -68,7 +68,7 @@ public class MatchManager {
 
         var possibleInlineIgnoreRules = inlineIgnoredRules
                 .stream()
-                .filter(el -> el.getText().contains(foundText) || foundText.contains(el.getText()))
+                .filter(el -> el.getText().contains(StringUtils.trim(foundText)) || foundText.contains(StringUtils.trim(el.getText())))
                 .toList();
         for (var possibleInlineRule : possibleInlineIgnoreRules) {
             var startOffset = StringUtils.indexOf(possibleInlineRule.getText(), foundText) >= 0 ? StringUtils.indexOf(possibleInlineRule.getText(), foundText) : StringUtils.indexOf(foundText, possibleInlineRule.getText());
