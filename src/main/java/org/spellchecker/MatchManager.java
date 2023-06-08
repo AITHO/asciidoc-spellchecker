@@ -34,7 +34,8 @@ public class MatchManager {
             sourceMap.setSourceFile(StringUtils.removeStart(StringUtils.removeStart(StringUtils.removeStart(sourceFile, sourceDir), "\\"), "\\"));
         }
         try (Stream<String> lines = Files.lines(Paths.get(sourceDir + "/" + sourceMap.getSourceFile()))) {
-            lines.skip(sourceMap.getSourceLine()-1).findFirst().ifPresent(line -> {
+            int lineNo = Math.max(sourceMap.getSourceLine() - 1, 0);
+            lines.skip(lineNo).findFirst().ifPresent(line -> {
                 for (var i = ruleMatch.getFromPos(); i < line.length(); i++) {
                     if (StringUtils.equals(StringUtils.substring(line, i, (ruleMatch.getToPos() - ruleMatch.getFromPos()) + i), foundText)) {
                         match.setToPos((ruleMatch.getToPos() - ruleMatch.getFromPos()) + i);
