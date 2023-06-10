@@ -1,5 +1,5 @@
 # Asciidoc Spell Checker
-A simple Java application using jAsciidoctor and Language Tool to produce a SARIF json file.
+A simple Java application using jAsciidoctor and LanguageTool to produce a SARIF json file.
 
 ## Usage
 

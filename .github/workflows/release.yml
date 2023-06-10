@@ -64,7 +64,7 @@ jobs:
       - run: echo line_count is ${{ steps.tag.outputs.line_count }}
       - run: cat body.log
 
-      #  create Github release with release note from file and binary asset attached
+      #  create GitHub release with release note from file and binary asset attached
       - uses: ncipollo/release-action@v1
         with:
           name: ${{ env.GITHUB_REF_NAME }}
