@@ -24,15 +24,14 @@ public class ArgumentParser {
         var sarifFile = System.getenv("ASCIIDOC_SARIF_FILE");
 
         net.sourceforge.argparse4j.inf.ArgumentParser parser = ArgumentParsers.newFor("asciidoctor-spellcheck").build()
-                .defaultHelp(true)
                 .description("Perform a spellcheck analysis on an AsciiDoc document.");
         parser.addArgument("-l", "--language")
                 .choices(Languages.get().stream().map(Language::getShortCodeWithCountryAndVariant).collect(Collectors.toList()))
                 .setDefault(langCode)
-                .help("Specify the language to use");
+                .help("specify the language to use (default: en-US)");
         parser.addArgument("-d", "--directory")
                 .setDefault(directory)
-                .help("Specify the language to use");
+                .help("specify the base directory containing the Asciidoc files");
         parser.addArgument("-i", "--words-ignored")
                 .setDefault(wordsIgnoredFile)
                 .help("The file containing the ignored words");
@@ -60,15 +59,18 @@ public class ArgumentParser {
         sarifFile = ns.getString("sarif_path");
 
         if (directory == null) {
-            System.err.println("Directory is mandatory");
+            parser.printUsage();
+            System.err.println("asciidoctor-spellcheck: error: argument -d/--directory is required");
             System.exit(1);
         }
         if (adocFile == null) {
-            System.err.println("A file is mandatory");
+            parser.printUsage();
+            System.err.println("asciidoctor-spellcheck: error: argument file is required");
             System.exit(1);
         }
         if (sarifFile == null) {
-            System.err.println("SarifFile is mandatory");
+            parser.printUsage();
+            System.err.println("asciidoctor-spellcheck: error: argument -s/--sarif-path is required");
             System.exit(1);
         }
         List<String> wordsToIgnore = new ArrayList<>();
