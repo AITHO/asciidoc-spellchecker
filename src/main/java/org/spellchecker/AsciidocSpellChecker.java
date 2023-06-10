@@ -4,34 +4,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class AsciidocSpellChecker {
     public static void main(String[] args) throws IOException, URISyntaxException {
-        var directory = System.getenv("ASCIIDOC_PATH");
-        var adocFile = System.getenv("ASCIIDOC_FILE");
-        var langCode = System.getenv("ASCIIDOC_LANG");
-        var wordsIgnoredFile = System.getenv("ASCIIDOC_WORDS_IGNORED");
-        var sarifFile = System.getenv("ASCIIDOC_SARIF_FILE");
-        List<String> wordsToIgnore = new ArrayList<>();
-        try {
-            String words = Files.readString(Paths.get(wordsIgnoredFile));
-            wordsToIgnore = Arrays.stream(words.split("\n")).map(String::trim).collect(Collectors.toList());
-        } catch (Exception e) {
-            System.out.println("Error reading words file " + wordsIgnoredFile);
-        }
+        ArgumentParser argumentParser = new ArgumentParser();
+        var analysisConfiguration = argumentParser.parse(args);
 
-        AsciidocIssueFinder parser = new AsciidocIssueFinder(langCode, wordsToIgnore);
-        var result = parser.parseAsciidoc(adocFile, directory);
+        AsciidocIssueFinder finder = new AsciidocIssueFinder(analysisConfiguration.getLangCode(), analysisConfiguration.getWordsToIgnore());
+        var result = finder.parseAsciidoc(analysisConfiguration.getAdocFile(), analysisConfiguration.getDirectory());
         SarifIssueConverter sarifConverter = new SarifIssueConverter();
         var sarif = sarifConverter.convert(result);
         ObjectMapper om = new ObjectMapper();
-        om.writeValue(Paths.get(sarifFile).toFile(), sarif);
+        om.writeValue(Paths.get(analysisConfiguration.getSarifFile()).toFile(), sarif);
 
     }
 
