@@ -2,8 +2,8 @@ name: ci
 
 on:
   push:
-    branches:
-      - "master"
+    tags:
+      - 'v*'
 
 jobs:
   docker:
@@ -31,4 +31,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: aithogg/asciidoc-spellchecker:latest
+          tags: aithogg/asciidoc-spellchecker:latest, aithogg/asciidoc-spellchecker:${GITHUB_REF_NAME}
