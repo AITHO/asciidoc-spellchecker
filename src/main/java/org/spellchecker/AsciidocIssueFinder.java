@@ -7,6 +7,7 @@ import org.asciidoctor.ast.Block;
 import org.asciidoctor.ast.ListItem;
 import org.asciidoctor.ast.Section;
 import org.asciidoctor.ast.StructuralNode;
+import org.checkerframework.checker.units.qual.A;
 import org.jsoup.nodes.Document;
 import org.languagetool.rules.patterns.PatternRule;
 import org.languagetool.rules.patterns.PatternToken;
@@ -25,11 +26,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class AsciidocIssueFinder {
-
+    private final List<String> alternativeLanguages = List.of("en-US");
     private final JLanguageTool langTool;
-    private final JLanguageTool altLangTool;
+    private final List<JLanguageTool> alternativeLangTools;
     private final Asciidoctor asciidoctor;
 
     private MatchManager matchManager;
@@ -53,10 +55,15 @@ public class AsciidocIssueFinder {
             }
         }
 
-        altLangTool = new JLanguageTool(Languages.getLanguageForShortCode("en-US"));
-        for(var rule: altLangTool.getAllActiveRules()) {
-            if(!(rule instanceof SpellingCheckRule)) {
-                altLangTool.disableRule(rule.getId());
+        alternativeLangTools = alternativeLanguages.stream()
+                .map(language -> new JLanguageTool(Languages.getLanguageForShortCode(language)))
+                .toList();
+
+        for(var altLangTool: alternativeLangTools) {
+            for(var rule: altLangTool.getAllActiveRules()) {
+                if(rule instanceof SpellingCheckRule) {
+                    altLangTool.disableRule(rule.getId());
+                }
             }
         }
 
@@ -111,7 +118,7 @@ public class AsciidocIssueFinder {
                     List<InlineIgnoredRule> inlineIgnoredRules = processSourceMap(subSourceMap);
                     List<RuleMatch> matches = langTool.check(subSourceMap.getText());
                     for (RuleMatch match : matches) {
-                        matchManager.handleMatch(subSourceMap, rulesToIgnore, match, inlineIgnoredRules, altLangTool)
+                        matchManager.handleMatch(subSourceMap, rulesToIgnore, match, inlineIgnoredRules, alternativeLangTools)
                                 .ifPresent(issues::add);
                     }
                 }

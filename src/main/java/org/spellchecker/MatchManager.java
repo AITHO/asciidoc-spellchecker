@@ -13,6 +13,7 @@ import org.spellchecker.model.SourceMap;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -22,24 +23,33 @@ public class MatchManager {
     private String sourceFile;
     private String sourceDir;
 
-    public Optional<Issue> handleMatch(SourceMap sourceMap, List<String> rulesToIgnore, RuleMatch ruleMatch, List<InlineIgnoredRule> inlineIgnoredRules, JLanguageTool altLangTool) {
+    public Optional<Issue> handleMatch(SourceMap sourceMap, List<String> rulesToIgnore, RuleMatch ruleMatch, List<InlineIgnoredRule> inlineIgnoredRules, List<JLanguageTool> altLangTools) {
         String foundText = sourceMap.getText().substring(ruleMatch.getFromPos(), ruleMatch.getToPos());
         if (ignoreRuleMatch(sourceMap, rulesToIgnore, ruleMatch, inlineIgnoredRules, foundText)){
             return Optional.empty();
         }
 
-        List<RuleMatch> altMatches = null;
+        // when the RuleMatch to handle is due to a SpellingCheckRule, check if foundText is valid for the alternative language tools
+        if(ruleMatch.getRule() instanceof SpellingCheckRule) {
 
-        try {
-            altMatches = altLangTool.check(foundText);
-        } catch (IOException e) {
-            System.out.println("error during source position double check");
-            e.printStackTrace();
+            List<List<RuleMatch>> altLangRuleMatches = new ArrayList<>();
+
+            try {
+                for (var altLangTool : altLangTools) {
+                    altLangRuleMatches.add(altLangTool.check(foundText));
+                }
+            } catch (IOException e) {
+                System.out.println("error during source position double check");
+                e.printStackTrace();
+            }
+
+            for (var ruleMatches : altLangRuleMatches) {
+                if (ruleMatches.isEmpty()) {
+                    return Optional.empty();
+                }
+            }
         }
 
-        if((ruleMatch.getRule() instanceof SpellingCheckRule) && altMatches != null && altMatches.isEmpty()) {
-            return Optional.empty();
-        }
 
         Match match = new Match();
         match.setRuleMatch(ruleMatch);
