@@ -11,7 +11,7 @@ public class AsciidocSpellChecker {
         ArgumentParser argumentParser = new ArgumentParser();
         var analysisConfiguration = argumentParser.parse(args);
 
-        AsciidocIssueFinder finder = new AsciidocIssueFinder(analysisConfiguration.getLangCode(), analysisConfiguration.getWordsToIgnore());
+        AsciidocIssueFinder finder = new AsciidocIssueFinder(analysisConfiguration.getLangCode(), analysisConfiguration.getAdditionalLangCodes(), analysisConfiguration.getWordsToIgnore());
         var result = finder.parseAsciidoc(analysisConfiguration.getAdocFile(), analysisConfiguration.getDirectory());
         SarifIssueConverter sarifConverter = new SarifIssueConverter();
         var sarif = sarifConverter.convert(result);
