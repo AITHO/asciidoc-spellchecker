@@ -2,7 +2,9 @@ package org.spellchecker;
 
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.languagetool.JLanguageTool;
 import org.languagetool.rules.RuleMatch;
+import org.languagetool.rules.spelling.SpellingCheckRule;
 import org.spellchecker.model.InlineIgnoredRule;
 import org.spellchecker.model.Issue;
 import org.spellchecker.model.Match;
@@ -20,9 +22,22 @@ public class MatchManager {
     private String sourceFile;
     private String sourceDir;
 
-    public Optional<Issue> handleMatch(SourceMap sourceMap, List<String> rulesToIgnore, RuleMatch ruleMatch, List<InlineIgnoredRule> inlineIgnoredRules) {
+    public Optional<Issue> handleMatch(SourceMap sourceMap, List<String> rulesToIgnore, RuleMatch ruleMatch, List<InlineIgnoredRule> inlineIgnoredRules, JLanguageTool altLangTool) {
         String foundText = sourceMap.getText().substring(ruleMatch.getFromPos(), ruleMatch.getToPos());
         if (ignoreRuleMatch(sourceMap, rulesToIgnore, ruleMatch, inlineIgnoredRules, foundText)){
+            return Optional.empty();
+        }
+
+        List<RuleMatch> altMatches = null;
+
+        try {
+            altMatches = altLangTool.check(foundText);
+        } catch (IOException e) {
+            System.out.println("error during source position double check");
+            e.printStackTrace();
+        }
+
+        if((ruleMatch.getRule() instanceof SpellingCheckRule) && altMatches != null && altMatches.isEmpty()) {
             return Optional.empty();
         }
 

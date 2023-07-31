@@ -10,6 +10,7 @@ import org.asciidoctor.ast.StructuralNode;
 import org.jsoup.nodes.Document;
 import org.languagetool.rules.patterns.PatternRule;
 import org.languagetool.rules.patterns.PatternToken;
+import org.languagetool.rules.spelling.SpellingCheckRule;
 import org.spellchecker.model.*;
 import org.jsoup.Jsoup;
 import org.languagetool.JLanguageTool;
@@ -28,7 +29,7 @@ import java.util.List;
 public class AsciidocIssueFinder {
 
     private final JLanguageTool langTool;
-
+    private final JLanguageTool altLangTool;
     private final Asciidoctor asciidoctor;
 
     private MatchManager matchManager;
@@ -49,6 +50,13 @@ public class AsciidocIssueFinder {
                     langTool.disableRule(rule.getId());
                 }
 
+            }
+        }
+
+        altLangTool = new JLanguageTool(Languages.getLanguageForShortCode("en-US"));
+        for(var rule: altLangTool.getAllActiveRules()) {
+            if(!(rule instanceof SpellingCheckRule)) {
+                altLangTool.disableRule(rule.getId());
             }
         }
 
@@ -103,7 +111,7 @@ public class AsciidocIssueFinder {
                     List<InlineIgnoredRule> inlineIgnoredRules = processSourceMap(subSourceMap);
                     List<RuleMatch> matches = langTool.check(subSourceMap.getText());
                     for (RuleMatch match : matches) {
-                        matchManager.handleMatch(subSourceMap, rulesToIgnore, match, inlineIgnoredRules)
+                        matchManager.handleMatch(subSourceMap, rulesToIgnore, match, inlineIgnoredRules, altLangTool)
                                 .ifPresent(issues::add);
                     }
                 }
