@@ -29,7 +29,7 @@ public class MatchManager {
             return Optional.empty();
         }
 
-        // when the RuleMatch to handle is due to a SpellingCheckRule, check if foundText is valid for the alternative language tools
+        // when the RuleMatch to handle is due to a SpellingCheckRule, check if foundText is valid for AT LEAST one of the alternative languages
         if(ruleMatch.getRule() instanceof SpellingCheckRule) {
 
             List<List<RuleMatch>> altLangRuleMatches = new ArrayList<>();
@@ -43,6 +43,7 @@ public class MatchManager {
                 e.printStackTrace();
             }
 
+            // if found text is valid for AT LEAST one of the alternative languages, the corresponding List<RuleMatch> must be empty
             for (var ruleMatches : altLangRuleMatches) {
                 if (ruleMatches.isEmpty()) {
                     return Optional.empty();
