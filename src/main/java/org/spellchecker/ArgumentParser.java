@@ -20,7 +20,7 @@ public class ArgumentParser {
         var directory = System.getenv("ASCIIDOC_PATH");
         var adocFile = System.getenv("ASCIIDOC_FILE");
         var langCode = Optional.ofNullable(System.getenv("ASCIIDOC_LANG")).orElse("en-US");
-        var additionalLangCodes = Arrays.stream(Optional.ofNullable(System.getenv("ASCIIDOC_ADDITIONAL_LANGS")).orElse("").split(" ")).filter(x -> !x.isEmpty()).toList();
+        var additionalLangCodes = Optional.ofNullable(System.getenv("ASCIIDOC_ADDITIONAL_LANGS")).orElse("");
         var wordsIgnoredFile = System.getenv("ASCIIDOC_WORDS_IGNORED");
         var sarifFile = System.getenv("ASCIIDOC_SARIF_FILE");
 
@@ -31,10 +31,9 @@ public class ArgumentParser {
                 .setDefault(langCode)
                 .help("specify the language to use (default: en-US)");
         parser.addArgument("--additional-languages")
-                .nargs("*")
-                .choices(Languages.get().stream().map(Language::getShortCodeWithCountryAndVariant).collect(Collectors.toList()))
+                .type(String.class)
                 .setDefault(additionalLangCodes)
-                .help("additional languages to spellcheck words that fail spellchecking in the primary language");
+                .help("space-separated list (between double quotes, e.g. \"en-US de\") of additional languages to spellcheck words failing spellchecking in the primary language");
         parser.addArgument("-d", "--directory")
                 .setDefault(directory)
                 .help("specify the base directory containing the Asciidoc files");
@@ -61,7 +60,7 @@ public class ArgumentParser {
         directory = ns.getString("directory");
         adocFile = ns.getString("file");
         langCode = ns.getString("language");
-        additionalLangCodes = ns.getList("additional_languages");
+        additionalLangCodes = ns.getString("additional_languages");
         wordsIgnoredFile = ns.getString("words_ignored");
         sarifFile = ns.getString("sarif_path");
 
@@ -93,7 +92,7 @@ public class ArgumentParser {
                 .adocFile(adocFile)
                 .directory(directory)
                 .langCode(langCode)
-                .additionalLangCodes(additionalLangCodes)
+                .additionalLangCodes(Arrays.stream(additionalLangCodes.split(" ")).toList())
                 .sarifFile(sarifFile)
                 .wordsToIgnore(wordsToIgnore)
                 .build();
