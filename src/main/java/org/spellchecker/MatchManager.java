@@ -2,7 +2,9 @@ package org.spellchecker;
 
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.languagetool.JLanguageTool;
 import org.languagetool.rules.RuleMatch;
+import org.languagetool.rules.spelling.SpellingCheckRule;
 import org.spellchecker.model.InlineIgnoredRule;
 import org.spellchecker.model.Issue;
 import org.spellchecker.model.Match;
@@ -11,6 +13,7 @@ import org.spellchecker.model.SourceMap;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -20,11 +23,34 @@ public class MatchManager {
     private String sourceFile;
     private String sourceDir;
 
-    public Optional<Issue> handleMatch(SourceMap sourceMap, List<String> rulesToIgnore, RuleMatch ruleMatch, List<InlineIgnoredRule> inlineIgnoredRules) {
+    public Optional<Issue> handleMatch(SourceMap sourceMap, List<String> rulesToIgnore, RuleMatch ruleMatch, List<InlineIgnoredRule> inlineIgnoredRules, List<JLanguageTool> altLangTools) {
         String foundText = sourceMap.getText().substring(ruleMatch.getFromPos(), ruleMatch.getToPos());
         if (ignoreRuleMatch(sourceMap, rulesToIgnore, ruleMatch, inlineIgnoredRules, foundText)){
             return Optional.empty();
         }
+
+        // when the RuleMatch to handle is due to a SpellingCheckRule, check if foundText is valid for AT LEAST one of the alternative languages
+        if(ruleMatch.getRule() instanceof SpellingCheckRule) {
+
+            List<List<RuleMatch>> altLangRuleMatches = new ArrayList<>();
+
+            try {
+                for (var altLangTool : altLangTools) {
+                    altLangRuleMatches.add(altLangTool.check(foundText));
+                }
+            } catch (IOException e) {
+                System.out.println("error during source position double check");
+                e.printStackTrace();
+            }
+
+            // if found text is valid for AT LEAST one of the alternative languages, the corresponding List<RuleMatch> must be empty
+            for (var ruleMatches : altLangRuleMatches) {
+                if (ruleMatches.isEmpty()) {
+                    return Optional.empty();
+                }
+            }
+        }
+
 
         Match match = new Match();
         match.setRuleMatch(ruleMatch);

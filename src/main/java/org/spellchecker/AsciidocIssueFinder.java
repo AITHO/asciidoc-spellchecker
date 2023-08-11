@@ -7,16 +7,20 @@ import org.asciidoctor.ast.Block;
 import org.asciidoctor.ast.ListItem;
 import org.asciidoctor.ast.Section;
 import org.asciidoctor.ast.StructuralNode;
-import org.jsoup.nodes.Document;
-import org.languagetool.rules.patterns.PatternRule;
-import org.languagetool.rules.patterns.PatternToken;
-import org.spellchecker.model.*;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.languagetool.JLanguageTool;
 import org.languagetool.Languages;
 import org.languagetool.rules.Rule;
 import org.languagetool.rules.RuleMatch;
+import org.languagetool.rules.patterns.PatternRule;
+import org.languagetool.rules.patterns.PatternToken;
+import org.languagetool.rules.spelling.SpellingCheckRule;
 import org.languagetool.rules.spelling.morfologik.MorfologikSpellerRule;
+import org.spellchecker.model.AnalysisResult;
+import org.spellchecker.model.InlineIgnoredRule;
+import org.spellchecker.model.Issue;
+import org.spellchecker.model.SourceMap;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,16 +30,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AsciidocIssueFinder {
-
     private final JLanguageTool langTool;
-
+    private final List<JLanguageTool> alternativeLangTools;
     private final Asciidoctor asciidoctor;
 
     private MatchManager matchManager;
 
     private List<Issue> issues;
 
-    public AsciidocIssueFinder(String locale, List<String> wordsIgnored) {
+    public AsciidocIssueFinder(String locale, List<String> additionalLang, List<String> wordsIgnored) {
         langTool = new JLanguageTool(Languages.getLanguageForShortCode(locale));
         for (Rule rule : langTool.getAllActiveRules()) {
             if (rule instanceof MorfologikSpellerRule morfologikSpellerRule) {
@@ -50,6 +53,17 @@ public class AsciidocIssueFinder {
                 }
 
             }
+        }
+
+        alternativeLangTools = new ArrayList<>();
+        for(var alternativeLanguage: additionalLang) {
+            JLanguageTool alternativeLangTool = new JLanguageTool(Languages.getLanguageForShortCode(alternativeLanguage));
+            for(var rule: alternativeLangTool.getAllActiveRules()) {
+                if(!(rule instanceof SpellingCheckRule)) {
+                    alternativeLangTool.disableRule(rule.getId());
+                }
+            }
+            alternativeLangTools.add(alternativeLangTool);
         }
 
         asciidoctor = Asciidoctor.Factory.create();
@@ -103,7 +117,7 @@ public class AsciidocIssueFinder {
                     List<InlineIgnoredRule> inlineIgnoredRules = processSourceMap(subSourceMap);
                     List<RuleMatch> matches = langTool.check(subSourceMap.getText());
                     for (RuleMatch match : matches) {
-                        matchManager.handleMatch(subSourceMap, rulesToIgnore, match, inlineIgnoredRules)
+                        matchManager.handleMatch(subSourceMap, rulesToIgnore, match, inlineIgnoredRules, alternativeLangTools)
                                 .ifPresent(issues::add);
                     }
                 }
